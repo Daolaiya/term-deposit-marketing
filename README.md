@@ -37,3 +37,53 @@
 **Bonus(es):**
 - We are also interested in finding customers who are more likely to buy the investment product. Determine the segment(s) of customers our client should prioritize.
 - What makes the customers buy? Tell us which feature we should be focusing more on.
+
+## Project Structure
+```
+TDM/
+├── notebook_tdm_1.ipynb   # EDA, preprocessing, model training & saving
+├── notebook_tdm_2.ipynb   # Feature importance, customer segmentation, clustering
+├── utils.py               # Shared helper functions imported by both notebooks
+├── data_raw.csv           # Source dataset (40,000 rows × 14 columns)
+├── models/                # Pickled models trained on the full feature set
+│   ├── LR.pkl    GNB.pkl    DTC.pkl    RF.pkl
+│   └── XGB.pkl   CAT.pkl    LGBM.pkl
+├── models_dropped/        # Pickled models trained on the reduced feature set
+│   └── (same filenames as above)
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+## Setup
+This project targets Python 3.10+.
+
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+## How to Run
+1. Make sure `data_raw.csv` is at the project root (download link above).
+2. Launch Jupyter and run the notebooks in order:
+   ```bash
+   jupyter notebook
+   ```
+3. Run `notebook_tdm_1.ipynb` first — it performs EDA / preprocessing and writes the trained models to `models/` and `models_dropped/`.
+4. Then run `notebook_tdm_2.ipynb`, which loads the saved models from `models/` for feature importance and customer segmentation analysis.
+
+## Methodology Notes
+- **Train/test split is stratified and performed *before* class balancing.** Only the training fold is under‑sampled to a 50/50 class ratio; the held‑out test fold preserves the natural distribution (~92.7 % `no` / 7.3 % `yes`). This avoids inflating accuracy by evaluating on an artificially balanced test set.
+- **5‑fold cross‑validation** is computed on the (balanced) training fold, which is the success metric called out in the goals above.
+- **ROC / AUC** are computed on the held‑out test fold using `predict_proba` scores.
+- Imputation, label encoding and helper utilities live in `utils.py` and are imported by both notebooks.
+
+## Results Summary
+- `CatBoostClassifier`, `LGBMClassifier`, `RandomForestClassifier`, `XGBClassifier` and `DecisionTreeClassifier` cleared the 81 % accuracy target under the original pipeline. **The notebooks have been refactored to fix data leakage and evaluation issues, so the cached output cells are stale until the notebooks are re‑run** — expect different (but more honest) accuracy numbers afterwards.
+- Feature‑importance analysis (model attributes, permutation importance, RFE) consistently flags `duration` as the dominant predictor, followed by `month`, `day`, `housing`, `balance` and `age`.
+- PCA / t‑SNE projections show no clean linear separability between subscribers and non‑subscribers.
